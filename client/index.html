@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="main.css">
     <!-- FontAwesome for high-tech icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 
 <body class="bg-slate-950 text-slate-100 min-h-screen font-sans">
@@ -83,6 +84,88 @@
                 </button>
             </div>
         </div>
+
+        <section class="grid gap-6 xl:grid-cols-3 mb-6">
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4">
+                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">Executive Summary</h3>
+                <div class="grid gap-3">
+                    <div class="bg-slate-950 border border-slate-800 rounded-xl p-4">
+                        <p class="text-[10px] uppercase tracking-wider text-slate-500">Total Crimes</p>
+                        <p id="metricTotalCrimes" class="text-3xl font-bold text-emerald-400">--</p>
+                    </div>
+                    <div class="bg-slate-950 border border-slate-800 rounded-xl p-4">
+                        <p class="text-[10px] uppercase tracking-wider text-slate-500">Active FIRs</p>
+                        <p id="metricActiveFIRs" class="text-3xl font-bold text-sky-400">--</p>
+                    </div>
+                    <div class="bg-slate-950 border border-slate-800 rounded-xl p-4">
+                        <p class="text-[10px] uppercase tracking-wider text-slate-500">Crime Categories</p>
+                        <p id="metricCategories" class="text-3xl font-bold text-amber-400">--</p>
+                    </div>
+                </div>
+            </div>
+            <div class="xl:col-span-2 grid gap-4">
+                <div class="bg-slate-900 border border-slate-800 rounded-xl p-5">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">Monthly Trend</h3>
+                        <span class="text-[10px] uppercase text-slate-500">Crime volume</span>
+                    </div>
+                    <canvas id="trendChart" height="220"></canvas>
+                </div>
+                <div class="bg-slate-900 border border-slate-800 rounded-xl p-5">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">Category Distribution</h3>
+                        <span class="text-[10px] uppercase text-slate-500">Top 5 categories</span>
+                    </div>
+                    <canvas id="categoryChart" height="220"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <section class="grid gap-6 xl:grid-cols-3 mb-6">
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-5">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">Crime Heat Map</h3>
+                    <span class="text-[10px] uppercase text-slate-500">Emerging clusters</span>
+                </div>
+                <div id="heatmapGrid" class="heatmap-grid"></div>
+            </div>
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-5">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">Criminal Network</h3>
+                    <span class="text-[10px] uppercase text-slate-500">Interactive nodes</span>
+                </div>
+                <div id="networkGraph" class="network-graph"></div>
+            </div>
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-5">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">Offender Profile</h3>
+                    <span class="text-[10px] uppercase text-slate-500">Risk & history</span>
+                </div>
+                <div id="offenderProfile" class="space-y-4"></div>
+            </div>
+        </section>
+
+        <section class="grid gap-6 xl:grid-cols-2 mb-6">
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-5">
+                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-4">Crime Forecast</h3>
+                <div id="forecastPanel"></div>
+            </div>
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-5">
+                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-4">Financial Crime</h3>
+                <div id="financialTrail"></div>
+            </div>
+        </section>
+
+        <section class="grid gap-6 xl:grid-cols-2 mb-6">
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-5">
+                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-4">Explainable AI</h3>
+                <div id="explainableAi"></div>
+            </div>
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-5">
+                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-4">Case Summary</h3>
+                <div id="caseSummary"></div>
+            </div>
+        </section>
 
         <!-- System Pipeline & Core Output Grid -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
