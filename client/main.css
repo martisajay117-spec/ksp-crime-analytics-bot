@@ -1,10 +1,8 @@
 @keyframes pulse {
-
     0%,
     100% {
         opacity: 1;
     }
-
     50% {
         opacity: .5;
     }
@@ -12,4 +10,84 @@
 
 .animate-pulse {
     animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.heatmap-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+}
+
+.heatmap-cell {
+    border-radius: 1rem;
+    min-height: 5.5rem;
+    padding: 1rem;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.08);
+}
+
+.heatmap-high {
+    background: linear-gradient(180deg, rgba(220, 38, 38, 0.96), rgba(185, 28, 28, 0.88));
+}
+
+.heatmap-medium {
+    background: linear-gradient(180deg, rgba(249, 115, 22, 0.94), rgba(194, 65, 12, 0.82));
+}
+
+.heatmap-low {
+    background: linear-gradient(180deg, rgba(16, 185, 129, 0.9), rgba(5, 150, 105, 0.8));
+}
+
+.network-graph {
+    display: grid;
+    gap: 1rem;
+}
+
+.network-node {
+    border-radius: 1rem;
+    padding: 1rem 1.2rem;
+    background: rgba(15, 23, 42, 0.96);
+    border: 1px solid rgba(148, 163, 184, 0.12);
+    box-shadow: 0 18px 50px -36px rgba(15, 23, 42, 0.9);
+    color: #f8fafc;
+}
+
+.network-central {
+    background: radial-gradient(circle at top left, rgba(59, 130, 246, 0.16), rgba(15, 23, 42, 1));
+    font-weight: 700;
+    text-align: center;
+}
+
+.network-links {
+    display: grid;
+    gap: 0.75rem;
+}
+
+.network-link {
+    display: grid;
+    grid-template-columns: 100px 1fr;
+    gap: 0.75rem;
+    align-items: center;
+}
+
+.network-label {
+    color: #94a3b8;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.network-edge-node {
+    background: rgba(30, 41, 59, 0.96);
+}
+
+.rounded-2xl {
+    border-radius: 1.25rem;
+}
+
+.bg-slate-950,
+.bg-slate-900 {
+    background-color: #0f172a;
 }
