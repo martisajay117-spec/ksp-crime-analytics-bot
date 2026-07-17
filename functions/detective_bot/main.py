@@ -4,7 +4,6 @@ import logging
 import zcatalyst_sdk
 # pyrefly: ignore [missing-import]
 from flask import Request, make_response, jsonify
-import google.generativeai as genai
 
 def handler(request: Request):
     app = zcatalyst_sdk.initialize()
