@@ -40,9 +40,8 @@ async function runAnalysis() {
                     "latitude": 12.2958,
                     "longitude": 76.6394,
                     "BriefFacts": "Complainant reports physical assault with sharp weapons near the market square. Suspect captured fleeing north by street camera terminal CAM-09.",
-                    "cctv_url": "https://images.unsplash.com/photo-1557597774-9d273605dfa9?auto=format&fit=crop&w=600&q=80" // High tech security graphic placeholder
+                    "cctv_url": "https://picsum.photos/800/600"
                 }
-            }
         ];
         renderUI(zcql, "Core Engine Stream (CCTV Secure Feed Loaded)", simulatedData);
     } finally {
