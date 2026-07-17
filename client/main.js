@@ -129,21 +129,37 @@ function setLanguage(lang) {
   document.querySelectorAll('.btn-primary').forEach(btn => btn.innerText = labels.btnViewRisk);
   document.querySelectorAll('.btn-secondary')[0].innerText = labels.btnOpenRisk;
   document.querySelectorAll('.btn-secondary')[1].innerText = labels.btnViewProfile;
-  document.getElementById('langEnBtn').classList.toggle('bg-white', lang === 'EN');
-  document.getElementById('langEnBtn').classList.toggle('text-blue-900', lang === 'EN');
-  document.getElementById('langKnBtn').classList.toggle('bg-white', lang === 'KN');
-  document.getElementById('langKnBtn').classList.toggle('text-blue-900', lang === 'KN');
+  const enBtn = document.getElementById('langEnBtn');
+  const knBtn = document.getElementById('langKnBtn');
+  if (lang === 'EN') {
+    enBtn.classList.add('bg-white', 'text-blue-900');
+    enBtn.classList.remove('bg-blue-800', 'text-white');
+    knBtn.classList.remove('bg-white', 'text-blue-900');
+    knBtn.classList.add('bg-blue-800', 'text-white');
+  } else {
+    knBtn.classList.add('bg-white', 'text-blue-900');
+    knBtn.classList.remove('bg-blue-800', 'text-white');
+    enBtn.classList.remove('bg-white', 'text-blue-900');
+    enBtn.classList.add('bg-blue-800', 'text-white');
+  }
 }
 
+const tabMap = {
+  dashboard: 'tabDashboard',
+  'risk-analysis': 'tabRiskAnalysis',
+  'suspect-profiles': 'tabSuspectProfiles',
+};
+
 function showTab(tabId) {
+  const activeId = tabMap[tabId] || 'tabDashboard';
   document.querySelectorAll('.tab-content').forEach(section => {
-    section.classList.toggle('hidden', section.id !== `tab${tabId.charAt(0).toUpperCase() + tabId.slice(1)}`);
+    section.classList.toggle('hidden', section.id !== activeId);
   });
   document.querySelectorAll('.tab-btn').forEach(button => {
     button.classList.remove('bg-white', 'text-blue-900');
     button.classList.add('bg-blue-900', 'text-white');
   });
-  const activeBtn = document.getElementById(`tab${tabId.charAt(0).toUpperCase() + tabId.slice(1)}Btn`);
+  const activeBtn = document.getElementById(`${activeId}Btn`);
   if (activeBtn) {
     activeBtn.classList.remove('bg-blue-900', 'text-white');
     activeBtn.classList.add('bg-white', 'text-blue-900');
@@ -164,6 +180,59 @@ function showPersonDetails(personId) {
 
 function closeModal() {
   document.getElementById('personModal').classList.add('hidden');
+}
+
+async function runAnalysis() {
+  const query = document.getElementById('queryInput').value.trim();
+  const button = document.getElementById('submitBtn');
+  button.disabled = true;
+  button.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> Processing...`;
+  try {
+    const payload = query ? await fetchAnalytics(query) : LOCAL_MOCK;
+    renderDashboard(payload);
+    renderUI(payload.generated_zcql, payload.data_source);
+  } catch (error) {
+    console.warn('Analytics fetch failed, using local mock:', error.message);
+    renderDashboard(LOCAL_MOCK);
+    renderUI(LOCAL_MOCK.generated_zcql, LOCAL_MOCK.data_source);
+  } finally {
+    button.disabled = false;
+    button.innerHTML = `<i class="fa-solid fa-circle-play"></i> Execute Engine`;
+  }
+}
+
+async function fetchAnalytics(query) {
+  const isLocal = ['localhost', '127.0.0.1'].includes(window.location.hostname) || window.location.protocol === 'file:';
+  if (isLocal) {
+    return simulateQuery(query);
+  }
+  const baseUrl = 'https://new-project-60078355625.development.catalystserverless.in/server/detective_bot';
+  const response = await fetch(`${baseUrl}/?question=${encodeURIComponent(query)}`);
+  if (!response.ok) throw new Error('Remote analytics endpoint failed');
+  const json = await response.json();
+  if (json.analytics) {
+    return {
+      ...json.analytics,
+      generated_zcql: json.generated_zcql || query,
+      data_source: json.data_source || 'Remote Analytics Engine',
+    };
+  }
+  return simulateQuery(query);
+}
+
+function simulateQuery(query) {
+  const payload = JSON.parse(JSON.stringify(LOCAL_MOCK));
+  payload.query = query;
+  payload.generated_zcql = query.toLowerCase().includes('mysuru')
+    ? "SELECT * FROM CaseMaster WHERE PoliceStationID IN (SELECT UnitID FROM Unit WHERE DistrictID = 404) AND CaseType = 'Burglary'"
+    : LOCAL_MOCK.generated_zcql;
+  if (query.toLowerCase().includes('burglary')) {
+    payload.summary.totalCrimes = '4,842';
+    payload.summary.activeFIRs = '912';
+    payload.summary.monthlyChange = '+33%';
+    payload.trend.values = [415, 428, 462, 405, 482, 530, 650];
+  }
+  return payload;
 }
 
 function renderSuspectProfiles() {
@@ -262,6 +331,19 @@ function renderNetworkGraph(network) {
       `).join('')}
     </div>
   `;
+}
+
+function renderDashboard(payload) {
+  const summary = payload.summary || LOCAL_MOCK.summary;
+  document.getElementById('metricTotalCrimes').innerText = summary.totalCrimes;
+  document.getElementById('metricActiveFIRs').innerText = summary.activeFIRs;
+  document.getElementById('metricCategories').innerText = summary.crimeCategories;
+  document.getElementById('metricMonthlyChange').innerText = summary.monthlyChange;
+  renderTrendChart(payload.trend || LOCAL_MOCK.trend);
+  renderCategoryChart(payload.categories || LOCAL_MOCK.categories);
+  renderHeatmap(payload.hotspots || LOCAL_MOCK.hotspots);
+  renderNetworkGraph(payload.network || LOCAL_MOCK.network);
+  renderSuspectProfiles();
 }
 
 function renderUI(zcql, source) {
