@@ -47,6 +47,7 @@ async function runAnalysis() {
 
     try {
         // Attempt the live API call first
+        // Point it directly to your live API Gateway Endpoint rule
         const response = await fetch(`https://new-project-60078355625.development.catalystserverless.in/server/detective_bot/?question=${encodeURIComponent(query)}`);
 
         if (!response.ok) throw new Error("Network routing error");
