@@ -7,7 +7,7 @@ async function runAnalysis() {
     btn.innerText = "Processing Data...";
 
     try {
-        const response = await fetch(`/server/detective_bot/?question=${encodeURIComponent(query)}`);
+        const response = await fetch(`https://new-project-60078355625.development.catalystserverless.in/server/detective_bot/?question=${encodeURIComponent(query)}`);
         const result = await response.json();
 
         document.getElementById('debugZcql').innerText = result.generated_zcql;
