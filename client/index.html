@@ -5,15 +5,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>KSP Intelligent Crime Analytics Platform</title>
-    <!-- 1. Tailwind UI Compiler -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- 2. Link to your custom main.css asset -->
-    <link rel="stylesheet" href="./main.css">
+    <link rel="stylesheet" href="main.css">
+    <!-- FontAwesome for high-tech icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 
 <body class="bg-slate-950 text-slate-100 min-h-screen font-sans">
 
-    <!-- Top Navigation Bar -->
+    <!-- Top Navigation Bar (Secure Role-Based Governance) -->
     <header
         class="border-b border-slate-800 bg-slate-900/40 backdrop-blur sticky top-0 z-50 px-6 py-4 flex justify-between items-center">
         <div class="flex items-center space-x-3">
@@ -21,57 +21,85 @@
             </div>
             <div>
                 <h1 class="text-lg font-bold text-white tracking-tight">Intelligent Crime Analytics Platform</h1>
-                <p class="text-[11px] text-slate-400 font-medium">State Core Engine • FIR Data System</p>
+                <p class="text-[11px] text-slate-400 font-medium">State Core Engine • FIR Data System • Secure Role:
+                    Investigator-Level Alpha</p>
             </div>
         </div>
-        <span
-            class="px-3 py-1 text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-full flex items-center gap-1.5">
-            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> DB Gateway Synced
-        </span>
+        <div class="flex items-center gap-4">
+            <span
+                class="px-3 py-1 text-xs font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-full flex items-center gap-1.5">
+                <i class="fa-solid fa-shield-halved"></i> Role: Investigator Access
+            </span>
+            <span
+                class="px-3 py-1 text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-full flex items-center gap-1.5">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> DB Gateway Synced
+            </span>
+        </div>
     </header>
 
     <main class="max-w-7xl mx-auto p-6 space-y-6">
 
-        <!-- Context Briefing Panel -->
-        <div class="bg-gradient-to-r from-blue-950/30 to-slate-900 border border-slate-800/80 rounded-xl p-5">
-            <h2 class="text-xs font-bold uppercase tracking-wider text-blue-400 mb-1">Criminological Analytics &
-                Sociological Mapping Framework</h2>
-            <p class="text-slate-400 text-xs leading-relaxed max-w-5xl">
-                This diagnostic terminal maps natural text inputs directly into formal database queries matching the
-                structured system layout. By analyzing spatial metrics, incident timelines, and category indices,
-                investigative teams can rapidly deploy resources to emerging crime clusters.
-            </p>
+        <!-- Context Briefing & Sociological Analytics Banner -->
+        <div
+            class="bg-gradient-to-r from-blue-950/30 to-slate-900 border border-slate-800/80 rounded-xl p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div class="space-y-1">
+                <h2 class="text-xs font-bold uppercase tracking-wider text-blue-400">Criminological Analytics &
+                    Sociological Mapping Framework</h2>
+                <p class="text-slate-400 text-xs leading-relaxed max-w-3xl">
+                    This diagnostic terminal maps natural text inputs directly into formal database queries matching the
+                    structured system layout. By analyzing spatial metrics, incident timelines, and category indices,
+                    investigative teams can rapidly deploy resources to emerging crime clusters.
+                </p>
+            </div>
+            <button onclick="window.print()"
+                class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold px-4 py-2.5 rounded-lg border border-slate-700 flex items-center gap-2 whitespace-nowrap self-start md:self-center">
+                <i class="fa-solid fa-file-pdf"></i> Save Intel Log (PDF)
+            </button>
         </div>
 
-        <!-- AI Conversational Console -->
-        <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-xl">
-            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Natural Language
-                Search Query</label>
+        <!-- 1. AI Conversational Intelligence Console -->
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-xl space-y-4">
+            <div class="flex justify-between items-center">
+                <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400">Natural Language
+                    Conversational Engine (English / ಕನ್ನಡ)</label>
+                <div class="flex items-center gap-2">
+                    <button class="px-2 py-1 text-[10px] font-bold bg-blue-600 rounded text-white">EN</button>
+                    <button
+                        class="px-2 py-1 text-[10px] font-bold bg-slate-800 rounded text-slate-400 hover:bg-slate-700">KN</button>
+                </div>
+            </div>
             <div class="flex flex-col sm:flex-row gap-3">
-                <input type="text" id="queryInput" value="Show me active murder cases in Mysuru with CCTV reports"
-                    class="flex-1 bg-slate-950 border border-slate-800 rounded-lg px-4 py-3 text-sm text-slate-100 placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-blue-600 font-medium"
-                    placeholder="Search criminal records using natural text...">
+                <div class="relative flex-1">
+                    <input type="text" id="queryInput" value="Show me active murder cases in Mysuru with CCTV reports"
+                        class="w-full bg-slate-950 border border-slate-800 rounded-lg pl-4 pr-10 py-3 text-sm text-slate-100 placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-blue-600 font-medium">
+                    <button onclick="startVoiceRecognition()"
+                        class="absolute right-3 top-3.5 text-slate-400 hover:text-blue-400">
+                        <i class="fa-solid fa-microphone"></i>
+                    </button>
+                </div>
                 <button onclick="runAnalysis()" id="submitBtn"
-                    class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold uppercase tracking-wider px-6 py-3 rounded-lg transition-colors shadow-lg">
-                    Execute Engine
+                    class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold uppercase tracking-wider px-6 py-3 rounded-lg transition-colors shadow-lg flex items-center gap-2 justify-center">
+                    <i class="fa-solid fa-circle-play"></i> Execute Engine
                 </button>
             </div>
         </div>
 
-        <!-- Terminal Panels Split View -->
+        <!-- System Pipeline & Core Output Grid -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-            <!-- Structural Metadata Diagnostics Bar -->
+            <!-- Left Panel: Explainable AI & Security Diagnostics -->
             <div class="space-y-4 lg:col-span-1">
-                <div class="bg-slate-900/50 border border-slate-800 rounded-xl p-5 space-y-4">
-                    <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">Query Schema Pipeline</h3>
-
+                <!-- Explainable AI (XAI) Trail -->
+                <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4">
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
+                        <i class="fa-solid fa-brain text-amber-500"></i> Explainable AI reasoning Path
+                    </h3>
                     <div class="space-y-3">
                         <div class="p-3 bg-slate-950 rounded-lg border border-slate-800">
                             <span class="block text-[10px] uppercase font-bold text-slate-500 tracking-wider">Generated
                                 ZCQL Vector</span>
                             <code id="debugZcql"
-                                class="text-xs font-mono text-amber-400 block break-words whitespace-pre-wrap mt-1">--- awaiting parsing ---</code>
+                                class="text-xs font-mono text-amber-400 block break-words whitespace-pre-wrap mt-1">--- awaiting execution ---</code>
                         </div>
                         <div class="p-3 bg-slate-950 rounded-lg border border-slate-800">
                             <span class="block text-[10px] uppercase font-bold text-slate-500 tracking-wider">Active
@@ -80,20 +108,37 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Crime Forecasting & Warnings -->
+                <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-3">
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-red-400 flex items-center gap-2">
+                        <i class="fa-solid fa-triangle-exclamation"></i> Early Warning & Forecasting
+                    </h3>
+                    <div class="p-3 bg-red-950/20 border border-red-900/40 rounded-lg text-xs space-y-2">
+                        <div class="flex items-center justify-between text-red-400 font-bold">
+                            <span>Hotspot Alert: Mysuru Central</span>
+                            <span class="bg-red-900/60 px-1.5 py-0.5 rounded text-[10px]">High Risk</span>
+                        </div>
+                        <p class="text-slate-400 text-[11px]">AI Predictive Models forecast a 14% increase in property
+                            offences over next 72 hrs due to local festival congestion patterns.</p>
+                    </div>
+                </div>
             </div>
 
-            <!-- Main Interactive Analytics Feed -->
-            <div class="lg:col-span-2 space-y-3">
+            <!-- Right Panel: Core Analytics Data Pipeline -->
+            <div class="lg:col-span-2 space-y-4">
                 <div class="flex justify-between items-center px-1">
-                    <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">Matched FIR Records Pipeline
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">Matched Intelligence Pipelines
                     </h3>
-                    <span id="recordCount" class="text-xs font-mono text-slate-500">0 records mapped</span>
+                    <span id="recordCount" class="text-xs font-mono text-slate-500">0 pipelines mapped</span>
                 </div>
 
-                <div id="resultsWrapper" class="space-y-3">
+                <div id="resultsWrapper" class="space-y-6">
+                    <!-- Blank Initial State -->
                     <div
-                        class="text-center py-16 border border-dashed border-slate-800 rounded-xl text-slate-600 text-xs tracking-wide">
-                        Initialize system search parameters to trace geographical case indices.
+                        class="text-center py-24 border border-dashed border-slate-800 rounded-xl text-slate-600 text-xs tracking-wide flex flex-col items-center justify-center gap-3">
+                        <i class="fa-solid fa-database text-2xl opacity-40"></i>
+                        Initialize state parameters to parse criminological case mapping indices.
                     </div>
                 </div>
             </div>
@@ -101,8 +146,7 @@
         </div>
     </main>
 
-    <!-- 3. Link to your split interactive javascript logic file -->
-    <script src="./main.js"></script>
+    <script src="main.js"></script>
 </body>
 
 </html>
