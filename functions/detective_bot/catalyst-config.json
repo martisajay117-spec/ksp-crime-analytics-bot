@@ -1,0 +1,11 @@
+{
+    "deployment": {
+        "name": "detective_bot",
+        "stack": "python_3_9",
+        "type": "advancedio",
+        "env_variables": {}
+    },
+    "execution": {
+        "main": "main.py"
+    }
+}

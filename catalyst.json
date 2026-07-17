@@ -1,0 +1,12 @@
+{
+  "functions": {
+    "targets": [
+      "detective_bot"
+    ],
+    "ignore": [],
+    "source": "functions"
+  },
+  "client": {
+    "source": "client"
+  }
+}

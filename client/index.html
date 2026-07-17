@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KSP Intelligent Crime Analytics Platform</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-icons/font-awesome/6.2.0/css/all.min.css">
+</head>
+
+<body class="bg-slate-900 text-slate-100 min-h-screen font-sans">
+
+    <!-- Header -->
+    <header
+        class="border-b border-slate-800 bg-slate-900/50 backdrop-blur sticky top-0 z-50 px-6 py-4 flex justify-between items-center">
+        <div class="flex items-center space-x-3">
+            <div class="bg-red-600 p-2 rounded-lg text-white font-bold tracking-wider text-xs">KSP</div>
+            <h1
+                class="text-xl font-bold tracking-tight bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent">
+                Intelligent Crime Analytics Platform
+            </h1>
+        </div>
+        <span
+            class="px-3 py-1 text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-full flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Core Engine Active
+        </span>
+    </header>
+
+    <main class="max-w-7xl mx-auto p-6 space-y-8">
+
+        <!-- Challenge Narrative Overview Card -->
+        <div class="bg-gradient-to-r from-blue-950/40 to-slate-900 border border-blue-900/40 rounded-xl p-6">
+            <h2 class="text-sm font-semibold uppercase tracking-wider text-blue-400 mb-2">Sociological & Criminological
+                Framework</h2>
+            <p class="text-slate-400 text-sm leading-relaxed max-w-4xl">
+                This conversational gateway maps unstructured operational reports into structured regional indices. By
+                translating natural law queries dynamically, analysts can pinpoint emerging geographical hot-spots,
+                enabling preventative sociological interventions and proactive resource deployment across high-density
+                sectors.
+            </p>
+        </div>
+
+        <!-- Query Input Section -->
+        <div class="bg-slate-800/50 border border-slate-700/60 rounded-xl p-6 shadow-xl backdrop-blur-sm">
+            <label class="block text-sm font-medium text-slate-300 mb-2">Natural Language Investigation Query</label>
+            <div class="flex flex-col md:flex-row gap-3">
+                <input type="text" id="queryInput" value="Show me cases in Mysuru"
+                    class="flex-1 bg-slate-950 border border-slate-700 rounded-lg px-4 py-3 text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                    placeholder="e.g., Show me active cases in Bangalore...">
+                <button onclick="runAnalysis()" id="submitBtn"
+                    class="bg-blue-600 hover:bg-blue-500 text-white font-medium px-6 py-3 rounded-lg transition-colors text-sm flex items-center justify-center space-x-2 shadow-lg shadow-blue-600/20">
+                    <span>Execute Analytics Engine</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Dynamic Output Workspace -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+            <!-- Left Panel: Pipeline Visualizer -->
+            <div class="space-y-6 lg:col-span-1">
+                <div class="bg-slate-800/30 border border-slate-800 rounded-xl p-5 space-y-4">
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">Execution Diagnostics</h3>
+
+                    <div class="space-y-3">
+                        <div class="p-3 bg-slate-950 rounded-lg border border-slate-800/80">
+                            <span class="block text-[10px] uppercase font-bold text-slate-500">Generated Query
+                                String</span>
+                            <code id="debugZcql"
+                                class="text-xs font-mono text-amber-400">--- awaiting execution ---</code>
+                        </div>
+                        <div class="p-3 bg-slate-950 rounded-lg border border-slate-800/80">
+                            <span class="block text-[10px] uppercase font-bold text-slate-500">Pipeline Routing
+                                Target</span>
+                            <span id="debugSource" class="text-xs text-slate-400">---</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Panel: Data Display Cards Grid -->
+            <div class="lg:col-span-2 space-y-4">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-sm font-semibold text-slate-300">Retrieved Crime Records Feed</h3>
+                    <span id="recordCount" class="text-xs text-slate-500 font-mono">0 records found</span>
+                </div>
+
+                <div id="resultsWrapper" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Dynamic case cards append here -->
+                    <div
+                        class="col-span-2 text-center py-12 border border-dashed border-slate-800 rounded-xl text-slate-500 text-sm">
+                        Enter an inquiry above to parse structural intelligence vectors.
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        async function runAnalysis() {
+            const query = document.getElementById('queryInput').value;
+            const btn = document.getElementById('submitBtn');
+            const wrapper = document.getElementById('resultsWrapper');
+
+            btn.disabled = true;
+            btn.innerHTML = `<span>Processing Vectors...</span>`;
+
+            try {
+                // Connects to your Advanced I/O backend securely
+                const response = await fetch(`/server/detective_bot/?question=${encodeURIComponent(query)}`);
+                const result = await response.json();
+
+                document.getElementById('debugZcql').innerText = result.generated_zcql;
+                document.getElementById('debugSource').innerText = result.data_source;
+                document.getElementById('recordCount').innerText = `${result.data.length} records mapped`;
+
+                wrapper.innerHTML = '';
+
+                if (result.data && result.data.length > 0) {
+                    result.data.forEach(item => {
+                        const record = item.CaseMaster;
+                        const statusColor = record.Status === 'Active' ? 'bg-red-500/10 text-red-400 border-red-500/20' : 'bg-amber-500/10 text-amber-400 border-amber-500/20';
+
+                        wrapper.innerHTML += `
+                            <div class="bg-slate-800/40 border border-slate-700/50 rounded-xl p-5 space-y-4 hover:border-slate-600 transition-all shadow-md">
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <span class="text-[10px] font-mono font-bold tracking-wider text-blue-400 uppercase">${record.CaseID}</span>
+                                        <h4 class="text-base font-bold mt-0.5 text-white">${record.Title}</h4>
+                                    </div>
+                                    <span class="px-2.5 py-0.5 text-xs font-medium border rounded-full ${statusColor}">
+                                        ${record.Status}
+                                    </span>
+                                </div>
+                                <div class="grid grid-cols-2 gap-2 pt-2 border-t border-slate-800 text-xs">
+                                    <div>
+                                        <span class="block text-slate-500">Regional Sector</span>
+                                        <span class="font-medium text-slate-300">${record.Location}</span>
+                                    </div>
+                                    <div>
+                                        <span class="block text-slate-500">Incident Registered</span>
+                                        <span class="font-medium text-slate-300">${record.CreatedTime}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                } else {
+                    wrapper.innerHTML = `<div class="col-span-2 text-center py-12 text-slate-500">No matching criminological records detected.</div>`;
+                }
+
+            } catch (error) {
+                console.error(error);
+                wrapper.innerHTML = `<div class="col-span-2 text-center py-12 text-red-400">Analytics routing error occurred. Check configurations.</div>`;
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = `<span>Execute Analytics Engine</span>`;
+            }
+        }
+    </script>
+</body>
+
+</html>

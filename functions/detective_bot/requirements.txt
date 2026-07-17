@@ -1,0 +1,2 @@
+zcatalyst-sdk==1.3.0
+google-generativeai
