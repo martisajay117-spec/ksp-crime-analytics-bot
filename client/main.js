@@ -203,7 +203,7 @@ async function runAnalysis() {
 }
 
 async function fetchAnalytics(query) {
-  const localBaseUrl = 'http://localhost:5001';
+  const localBaseUrl = 'http://localhost:5002';
   const remoteBaseUrl = 'https://new-project-60078355625.development.catalystserverless.in/server/detective_bot';
   const isLocal = ['localhost', '127.0.0.1'].includes(window.location.hostname) || window.location.protocol === 'file:';
 

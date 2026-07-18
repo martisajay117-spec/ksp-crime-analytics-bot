@@ -76,8 +76,12 @@ def _log_chat(session_id: str, role: str, prompt: str, language: str = "en") -> 
     timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
     safe_prompt = prompt.replace("'", "\\'")
 
+    catalyst = get_catalyst_app()
+    if catalyst is None:
+        logger.info("Skipping CHATHISTORY logging because Catalyst backend is unavailable.")
+        return
+
     try:
-        catalyst = get_catalyst_app()
         datastore = catalyst.datastore()
         chat_table = datastore.table("CHATHISTORY")
         chat_table.insert_row(
