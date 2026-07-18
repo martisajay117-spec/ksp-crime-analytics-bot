@@ -107,7 +107,91 @@ const LOCAL_MOCK = {
 };
 
 const charts = { trend: null, category: null };
+const LOCAL_BASE_URL = 'http://localhost:5002';
+const authState = {
+  token: localStorage.getItem('kspAuthToken'),
+  role: localStorage.getItem('kspUserRole') || 'Guest',
+  sessionId: localStorage.getItem('kspSessionId') || null,
+};
 let currentLanguage = 'EN';
+
+function getAuthHeaders() {
+  const headers = { 'Content-Type': 'application/json' };
+  if (authState.token) {
+    headers.Authorization = `Bearer ${authState.token}`;
+  }
+  return headers;
+}
+
+function saveAuthState() {
+  if (authState.token) {
+    localStorage.setItem('kspAuthToken', authState.token);
+  }
+  localStorage.setItem('kspUserRole', authState.role || 'Guest');
+  if (authState.sessionId) {
+    localStorage.setItem('kspSessionId', authState.sessionId);
+  }
+}
+
+function updateUserRoleUI() {
+  const roleLabel = document.getElementById('userRole');
+  if (roleLabel) {
+    roleLabel.innerText = `Role: ${authState.role || 'Guest'}`;
+  }
+}
+
+function showLoginOverlay() {
+  const overlay = document.getElementById('loginOverlay');
+  if (overlay) {
+    overlay.classList.remove('hidden');
+  }
+}
+
+function hideLoginOverlay() {
+  const overlay = document.getElementById('loginOverlay');
+  if (overlay) {
+    overlay.classList.add('hidden');
+  }
+}
+
+async function handleLogin(event) {
+  event.preventDefault();
+  const username = document.getElementById('loginUsername').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  try {
+    const response = await fetch(`${LOCAL_BASE_URL}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password }),
+    });
+
+    const result = await response.json();
+    if (!response.ok || result.status !== 'success') {
+      alert(result.message || 'Login failed');
+      return;
+    }
+
+    authState.token = result.token;
+    authState.role = result.role || 'Guest';
+    saveAuthState();
+    updateUserRoleUI();
+    hideLoginOverlay();
+    await fetchChatHistory();
+  } catch (err) {
+    console.error('Login error', err);
+    alert('Unable to sign in. Please try again later.');
+  }
+}
+
+function initUserState() {
+  updateUserRoleUI();
+  if (!authState.token) {
+    showLoginOverlay();
+  } else {
+    hideLoginOverlay();
+    fetchChatHistory();
+  }
+}
 
 function setLanguage(lang) {
   currentLanguage = lang;
@@ -209,10 +293,10 @@ async function fetchAnalytics(query) {
 
   if (isLocal) {
     try {
-      const response = await fetch(`${localBaseUrl}/predictive-chat`, {
+      const response = await fetch(`${LOCAL_BASE_URL}/predictive-chat`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: query }),
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ message: query, session_id: authState.sessionId }),
       });
 
       if (!response.ok) {
@@ -220,6 +304,10 @@ async function fetchAnalytics(query) {
       }
 
       const json = await response.json();
+      if (json.session_id) {
+        authState.sessionId = json.session_id;
+        saveAuthState();
+      }
       return normalizeDashboardPayload(json, query);
     } catch (err) {
       console.warn('Local backend unavailable, falling back to mock:', err.message);
@@ -229,8 +317,8 @@ async function fetchAnalytics(query) {
 
   const response = await fetch(`${remoteBaseUrl}/predictive-chat`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ message: query }),
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ message: query, session_id: authState.sessionId }),
   });
 
   if (!response.ok) throw new Error('Remote analytics endpoint failed');
@@ -293,6 +381,119 @@ function normalizeDashboardPayload(payload, query = '') {
     source,
   };
 }
+
+function renderChatHistory(history = []) {
+  const container = document.getElementById('chatMessages');
+  const statusLabel = document.getElementById('chatStatus');
+  if (!container || !statusLabel) return;
+  if (!history.length) {
+    statusLabel.innerText = 'No messages yet';
+    container.innerHTML = '<p class="text-sm text-slate-500">Start a new investigation prompt to capture chat history.</p>';
+    return;
+  }
+
+  statusLabel.innerText = `${history.length} messages logged`;
+  container.innerHTML = history
+    .map(entry => `
+      <div class="rounded-3xl border border-slate-200 bg-slate-50 p-4 ${entry.role === 'assistant' ? 'ml-8' : 'mr-8'}">
+        <div class="flex items-center justify-between gap-3 text-xs uppercase tracking-[0.24em] text-slate-500">
+          <span>${entry.role}</span>
+          <span>${new Date(entry.timestamp).toLocaleString()}</span>
+        </div>
+        <p class="mt-2 text-slate-700">${entry.message}</p>
+      </div>
+    `)
+    .join('');
+}
+
+async function fetchChatHistory() {
+  if (!authState.token) {
+    renderChatHistory([]);
+    return;
+  }
+  try {
+    const response = await fetch(`${LOCAL_BASE_URL}/chat-history?session_id=${encodeURIComponent(authState.sessionId || '')}`, {
+      method: 'GET',
+      headers: getAuthHeaders(),
+    });
+    const json = await response.json();
+    if (response.ok && json.status === 'success') {
+      renderChatHistory(json.history || []);
+    } else {
+      renderChatHistory([]);
+    }
+  } catch (err) {
+    console.warn('Failed to load chat history', err);
+    renderChatHistory([]);
+  }
+}
+
+function startVoiceInput() {
+  if (!window.SpeechRecognition && !window.webkitSpeechRecognition) {
+    alert('Voice input is not supported in this browser.');
+    return;
+  }
+
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const recognition = new SpeechRecognition();
+  recognition.lang = currentLanguage === 'KN' ? 'kn-IN' : 'en-IN';
+  recognition.interimResults = false;
+  recognition.maxAlternatives = 1;
+
+  recognition.onresult = (event) => {
+    const transcript = event.results[0][0].transcript;
+    document.getElementById('queryInput').value = transcript;
+    runAnalysis();
+  };
+
+  recognition.onerror = (event) => {
+    console.error('Speech recognition error', event.error);
+    alert('Voice input error. Please try again.');
+  };
+
+  recognition.start();
+}
+
+function exportChatPDF() {
+  const chatContainer = document.getElementById('chatMessages');
+  if (!chatContainer) return;
+
+  const doc = new window.jspdf.jsPDF({ unit: 'pt', format: 'a4' });
+  const lines = [`KSP Detective Bot Chat Export`, `Role: ${authState.role || 'Guest'}`, ``, ...Array.from(chatContainer.querySelectorAll('div')).flatMap(div => {
+    const role = div.querySelector('span')?.innerText || '';
+    const content = div.querySelector('p')?.innerText || '';
+    return [`${role}:`, content, ''];
+  })];
+
+  doc.setFontSize(12);
+  let y = 40;
+  lines.forEach(line => {
+    if (y > 760) {
+      doc.addPage();
+      y = 40;
+    }
+    doc.text(line, 40, y);
+    y += 18;
+  });
+
+  doc.save('ksp-chat-export.pdf');
+}
+
+function initDashboard() {
+  document.getElementById('loginForm')?.addEventListener('submit', handleLogin);
+  showTab('dashboard');
+  setLanguage('EN');
+  updateUserRoleUI();
+  renderTrendChart(LOCAL_MOCK.trend);
+  renderCategoryChart(LOCAL_MOCK.categories);
+  renderHeatmap(LOCAL_MOCK.hotspots);
+  renderNetworkGraph(LOCAL_MOCK.network);
+  renderSuspectProfiles();
+  renderUI(LOCAL_MOCK.generated_zcql, LOCAL_MOCK.data_source);
+  initUserState();
+}
+
+window.addEventListener('DOMContentLoaded', initDashboard);
 
 function simulateQuery(query) {
   const payload = JSON.parse(JSON.stringify(LOCAL_MOCK));
@@ -424,16 +625,3 @@ function renderUI(zcql, source) {
   document.getElementById('debugZcql').innerText = zcql;
   document.getElementById('debugSource').innerText = source;
 }
-
-function initDashboard() {
-  showTab('dashboard');
-  setLanguage('EN');
-  renderTrendChart(LOCAL_MOCK.trend);
-  renderCategoryChart(LOCAL_MOCK.categories);
-  renderHeatmap(LOCAL_MOCK.hotspots);
-  renderNetworkGraph(LOCAL_MOCK.network);
-  renderSuspectProfiles();
-  renderUI(LOCAL_MOCK.generated_zcql, LOCAL_MOCK.data_source);
-}
-
-window.addEventListener('DOMContentLoaded', initDashboard);
