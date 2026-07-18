@@ -203,13 +203,31 @@ async function runAnalysis() {
 }
 
 async function fetchAnalytics(query) {
+  const localBaseUrl = 'http://localhost:5001';
+  const remoteBaseUrl = 'https://new-project-60078355625.development.catalystserverless.in/server/detective_bot';
   const isLocal = ['localhost', '127.0.0.1'].includes(window.location.hostname) || window.location.protocol === 'file:';
+
   if (isLocal) {
-    return normalizeDashboardPayload(simulateQuery(query), query);
+    try {
+      const response = await fetch(`${localBaseUrl}/predictive-chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: query }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Local backend returned ${response.status}`);
+      }
+
+      const json = await response.json();
+      return normalizeDashboardPayload(json, query);
+    } catch (err) {
+      console.warn('Local backend unavailable, falling back to mock:', err.message);
+      return normalizeDashboardPayload(simulateQuery(query), query);
+    }
   }
 
-  const baseUrl = 'https://new-project-60078355625.development.catalystserverless.in/server/detective_bot';
-  const response = await fetch(`${baseUrl}/predictive-chat`, {
+  const response = await fetch(`${remoteBaseUrl}/predictive-chat`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ message: query }),

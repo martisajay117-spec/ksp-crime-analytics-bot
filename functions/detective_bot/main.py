@@ -1,47 +1,35 @@
+import json
 import logging
 import os
 import re
 from datetime import datetime, timezone
 
 import zcatalyst_sdk
-from flask import Flask, jsonify, request
+from flask import Flask, Request, jsonify, make_response, request
 
 app = Flask(__name__)
 logger = logging.getLogger("detective_bot")
 logger.setLevel(logging.INFO)
 
-try:
-    catalyst = zcatalyst_sdk.initialize()
-except TypeError:
-    catalyst = zcatalyst_sdk.initialize(app=app)
+catalyst_app = None
 
 
-def _get_zcql_service():
-    if catalyst is None:
-        raise RuntimeError("Catalyst SDK could not be initialized.")
-    if hasattr(catalyst, "zcql"):
-        return catalyst.zcql()
-    raise RuntimeError("Catalyst SDK did not expose a zcql service.")
+def get_catalyst_app():
+    global catalyst_app
+    if catalyst_app is not None:
+        return catalyst_app
+
+    try:
+        catalyst_app = zcatalyst_sdk.initialize()
+    except Exception as exc:
+        logger.warning("Catalyst SDK initialization failed, using fallback mode: %s", exc)
+        catalyst_app = None
+
+    return catalyst_app
 
 
 def _sanitize_text(value: str) -> str:
     return re.sub(r"[^a-zA-Z0-9\s]", "", value or "").strip()
-
-
-def _log_chat(message: str) -> None:
-    if not message:
-        return
-
-    timestamp = datetime.now(timezone.utc).isoformat()
-    safe_message = message.replace("'", "\\'")
-
-    try:
-        zcql_service = _get_zcql_service()
-        zcql_service.execute_query(
-            f"INSERT INTO CHATHISTORY (Message, CreatedAt) VALUES ('{safe_message}', '{timestamp}')"
-        )
-    except Exception as exc:
-        logger.warning("Unable to log chat message to CHATHISTORY: %s", exc)
 
 
 def _build_search_query(message: str):
@@ -81,62 +69,108 @@ def _build_answer(message: str, source: str, rows):
     )
 
 
-@app.route("/predictive-chat", methods=["POST"])
-def predictive_chat():
-    payload = request.get_json(silent=True) or {}
-    message = payload.get("message") or request.form.get("message") or request.args.get("message")
+def _log_chat(session_id: str, role: str, prompt: str, language: str = "en") -> None:
+    if not prompt:
+        return
 
-    if not message or not str(message).strip():
-        return jsonify({"status": "error", "message": "A non-empty message is required."}), 400
-
-    _log_chat(str(message))
-
-    query, source = _build_search_query(str(message))
+    timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+    safe_prompt = prompt.replace("'", "\\'")
 
     try:
-        zcql_service = _get_zcql_service()
-        records = zcql_service.execute_query(query)
+        catalyst = get_catalyst_app()
+        datastore = catalyst.datastore()
+        chat_table = datastore.table("CHATHISTORY")
+        chat_table.insert_row(
+            {
+                "SessionID": session_id,
+                "Role": role,
+                "TextPrompt": safe_prompt,
+                "Language": language,
+                "Timestamp": timestamp,
+            }
+        )
     except Exception as exc:
-        logger.warning("Query failed for predictive chat: %s", exc)
-        records = []
+        logger.warning("Unable to log chat row to CHATHISTORY: %s", exc)
 
-    return jsonify(
-        {
-            "status": "success",
-            "answer": _build_answer(str(message), source, records),
-            "source": source,
-            "query": query,
-            "matches": records,
-        }
-    ), 200
+
+def handler(request: Request):
+    catalyst = get_catalyst_app()
+
+    if request.path == "/predictive-chat" and request.method == "POST":
+        try:
+            body = request.get_json(silent=True) or {}
+            user_message = body.get("message", "")
+            session_id = body.get("session_id", "session_123")
+
+            if "burglary" in user_message.lower() and catalyst is not None:
+                zcql_query = "SELECT * FROM CASEMASTER WHERE BriefFacts LIKE '%burglary%'"
+                query_result = catalyst.zcql().execute_query(zcql_query)
+                ai_response = (
+                    f"Found {len(query_result)} burglary cases. "
+                    f"Details: {query_result[0].get('CASEMASTER', {}).get('BriefFacts') if query_result else 'None found.'}"
+                )
+            elif "burglary" in user_message.lower():
+                ai_response = "Catalyst backend not available locally. Burglary search can only run after deployment."
+                query_result = []
+            else:
+                ai_response = "I am ready to search the database. Try typing 'burglary'."
+                query_result = []
+
+            _log_chat(session_id, "user", user_message)
+            _log_chat(session_id, "assistant", ai_response)
+
+            response = make_response(jsonify({"response": ai_response}), 200)
+            response.headers["Access-Control-Allow-Origin"] = "*"
+            response.headers["Access-Control-Allow-Headers"] = "Content-Type"
+            response.headers["Access-Control-Allow-Methods"] = "POST, OPTIONS"
+            return response
+
+        except Exception as e:
+            response = make_response(jsonify({"error": str(e)}), 500)
+            response.headers["Access-Control-Allow-Origin"] = "*"
+            return response
+
+    elif request.path == "/network-data" and request.method == "GET":
+        try:
+            zcql_query = "SELECT * FROM ENTRY_LINK_MATRIX LIMIT 10"
+            graph_data = catalyst.zcql().execute_query(zcql_query)
+            response = make_response(jsonify({"data": graph_data}), 200)
+            response.headers["Access-Control-Allow-Origin"] = "*"
+            response.headers["Access-Control-Allow-Headers"] = "Content-Type"
+            response.headers["Access-Control-Allow-Methods"] = "GET, OPTIONS"
+            return response
+        except Exception as e:
+            response = make_response(jsonify({"error": str(e)}), 500)
+            response.headers["Access-Control-Allow-Origin"] = "*"
+            return response
+
+    response = make_response(jsonify({"message": "Detective Bot API is running!"}), 200)
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    return response
+
+
+@app.after_request
+def add_cors_headers(response):
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Access-Control-Allow-Headers"] = "Content-Type"
+    response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
+    return response
+
+
+@app.route("/predictive-chat", methods=["POST"])
+def flask_predictive_chat():
+    return handler(request)
 
 
 @app.route("/network-data", methods=["GET"])
-def network_data():
-    try:
-        zcql_service = _get_zcql_service()
-        records = zcql_service.execute_query("SELECT * FROM ENTRY_LINK_MATRIX LIMIT 50")
-    except Exception as exc:
-        logger.warning("Could not retrieve ENTRY_LINK_MATRIX records: %s", exc)
-        records = []
+def flask_network_data():
+    return handler(request)
 
-    nodes = []
-    edges = []
 
-    for row in records:
-        if not isinstance(row, dict):
-            continue
-
-        source = row.get("Source") or row.get("source") or row.get("From") or row.get("from")
-        target = row.get("Target") or row.get("target") or row.get("To") or row.get("to")
-        label = row.get("LinkType") or row.get("linkType") or row.get("Relation") or row.get("relation") or "related"
-
-        if source and target:
-            nodes.append({"id": str(source), "label": str(source)})
-            nodes.append({"id": str(target), "label": str(target)})
-            edges.append({"source": str(source), "target": str(target), "label": str(label)})
-
-    return jsonify({"status": "success", "records": records, "nodes": nodes, "edges": edges}), 200
+@app.route("/", defaults={"path": ""}, methods=["GET", "POST"])
+@app.route("/<path:path>", methods=["GET", "POST"])
+def catch_all(path=""):
+    return handler(request)
 
 
 if __name__ == "__main__":
