@@ -188,13 +188,14 @@ async function runAnalysis() {
   button.disabled = true;
   button.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> Processing...`;
   try {
-    const payload = query ? await fetchAnalytics(query) : LOCAL_MOCK;
+    const payload = query ? await fetchAnalytics(query) : normalizeDashboardPayload(LOCAL_MOCK, query);
     renderDashboard(payload);
     renderUI(payload.generated_zcql, payload.data_source);
   } catch (error) {
     console.warn('Analytics fetch failed, using local mock:', error.message);
-    renderDashboard(LOCAL_MOCK);
-    renderUI(LOCAL_MOCK.generated_zcql, LOCAL_MOCK.data_source);
+    const fallbackPayload = normalizeDashboardPayload(LOCAL_MOCK, query);
+    renderDashboard(fallbackPayload);
+    renderUI(fallbackPayload.generated_zcql, fallbackPayload.data_source);
   } finally {
     button.disabled = false;
     button.innerHTML = `<i class="fa-solid fa-circle-play"></i> Execute Engine`;
@@ -204,20 +205,75 @@ async function runAnalysis() {
 async function fetchAnalytics(query) {
   const isLocal = ['localhost', '127.0.0.1'].includes(window.location.hostname) || window.location.protocol === 'file:';
   if (isLocal) {
-    return simulateQuery(query);
+    return normalizeDashboardPayload(simulateQuery(query), query);
   }
+
   const baseUrl = 'https://new-project-60078355625.development.catalystserverless.in/server/detective_bot';
-  const response = await fetch(`${baseUrl}/?question=${encodeURIComponent(query)}`);
+  const response = await fetch(`${baseUrl}/predictive-chat`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ message: query }),
+  });
+
   if (!response.ok) throw new Error('Remote analytics endpoint failed');
+
   const json = await response.json();
-  if (json.analytics) {
+  return normalizeDashboardPayload(json, query);
+}
+
+function normalizeDashboardPayload(payload, query = '') {
+  const fallback = JSON.parse(JSON.stringify(LOCAL_MOCK));
+  const response = payload || {};
+
+  if (response.analytics) {
     return {
-      ...json.analytics,
-      generated_zcql: json.generated_zcql || query,
-      data_source: json.data_source || 'Remote Analytics Engine',
+      ...response.analytics,
+      generated_zcql: response.generated_zcql || response.query || query,
+      data_source: response.data_source || 'Remote Analytics Engine',
+      query: response.query || query,
     };
   }
-  return simulateQuery(query);
+
+  const matches = Array.isArray(response.matches) ? response.matches : [];
+  const answer = response.answer || 'No answer returned.';
+  const source = response.source || 'Remote Analytics Engine';
+
+  return {
+    ...fallback,
+    query: response.query || query || fallback.query,
+    generated_zcql: response.query || query || fallback.generated_zcql,
+    data_source: source,
+    summary: {
+      totalCrimes: `${matches.length || 0}`,
+      activeFIRs: `${Math.max(1, matches.length || 1)}`,
+      crimeCategories: matches.length ? 1 : 0,
+      monthlyChange: 'n/a',
+    },
+    trend: {
+      labels: ['Matches', 'Insights'],
+      values: [matches.length || 0, matches.length ? 1 : 0],
+    },
+    categories: {
+      labels: [source || 'Result'],
+      values: [matches.length || 0],
+    },
+    hotspots: matches.length ? [{
+      name: source,
+      level: 'Info',
+      score: 78,
+      description: answer,
+    }] : fallback.hotspots,
+    network: {
+      central: source,
+      links: [
+        { label: 'Query', target: response.query || query || fallback.query },
+        { label: 'Answer', target: answer },
+      ],
+    },
+    answer,
+    matches,
+    source,
+  };
 }
 
 function simulateQuery(query) {
